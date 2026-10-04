@@ -20,12 +20,10 @@ remembers your chat history, and analyzes local files dropped directly onto his 
 ## Controls & Shortcuts
 
 
-| **Drag / Throw** | Click and hold Left Mouse Button, release to throw |
-| **Context Menu** | Right Click on Neil |
-| **Toggle Chat** | Press `F1` or click "Ask Neil" in the Menu | 
-| **File Scanner** | Drag any text/code file onto Neil |
-
-
+- **Drag / Throw:** Click and hold Left Mouse Button, release to throw
+- **Context Menu:** Right Click on Neil
+- **Toggle Chat:** Press `F1` or click "Ask Neil" in the Menu
+- **File Scanner:** Drag any text/code file onto Neil
 
 ## Setup & Installation
 
