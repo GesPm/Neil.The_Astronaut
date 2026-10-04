@@ -3,6 +3,9 @@
 **Neil** is a physics-driven, bezel-walking desktop companion built in **Godot 4** and powered by the **Google Gemini API (Optional)**. He lives on the edges of your screen,
 remembers your chat history, and analyzes local files dropped directly onto his suit ( Locally stores API key ).
 
+Download on Itch.io:
+[![Download on itch.io](https://gekib.itch.io/neil-the-astronaut)
+
 
 ---
 
