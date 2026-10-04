@@ -207,7 +207,7 @@ position = Vector2(33.000004, 26)
 scale = Vector2(4.9375, 4.71875)
 sprite_frames = SubResource("SpriteFrames_shpl7")
 animation = &"walk"
-frame_progress = 0.96045244
+frame_progress = 0.24255791
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1294650748]
 position = Vector2(34, 20)
@@ -217,3 +217,43 @@ scale = Vector2(5.4999995, 5.4375)
 position = Vector2(-0.9090905, 2.2988508)
 scale = Vector2(0.99999994, 1)
 shape = SubResource("RectangleShape2D_3635s")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=242407583]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2134195051]
+
+[node name="ContextMenu" type="PopupMenu" parent="CanvasLayer" unique_id=374302086]
+
+[node name="SearchBubble" type="PanelContainer" parent="CanvasLayer" unique_id=1853398849]
+custom_minimum_size = Vector2(300, 180)
+anchors_preset = -1
+anchor_right = 3.9060001
+anchor_bottom = 1.562
+offset_right = 50.01599
+offset_bottom = 80.032
+grow_horizontal = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SearchBubble" unique_id=1155720080]
+layout_mode = 2
+
+[node name="CloseButton" type="Button" parent="CanvasLayer/SearchBubble/VBoxContainer" unique_id=1287421150]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+text = "																												
+
+
+
+
+
+
+
+
+
+																									Close"
+alignment = 2
+
+[node name="LineEdit" type="LineEdit" parent="CanvasLayer/SearchBubble/VBoxContainer" unique_id=880422348]
+layout_mode = 2
+
+[node name="AnswerLabel" type="Label" parent="CanvasLayer/SearchBubble/VBoxContainer" unique_id=1652330313]
+layout_mode = 2
