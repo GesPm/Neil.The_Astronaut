@@ -89,7 +89,7 @@ func save_api_key(key: String) -> void:
 func _setup_ui():
 	context_menu.clear()
 	context_menu.add_item(" Ask Neil (F1)", 0)
-	context_menu.add_item("Set Gemini API Key (Optional)", 1)
+	context_menu.add_item("Set Hackclub/Gemini API Key (Optional)", 1)
 	context_menu.add_separator()
 	context_menu.add_check_item("Idle Only Mode", 2)
 	context_menu.add_check_item("Annoying mode (Closes Tabs)", 3)
@@ -136,6 +136,10 @@ func expand_window_for_bubble():
 		
 	is_expanded = true
 	search_bubble.visible = true
+	
+	is_idling = true
+	speed = 0.0
+	animated_sprite.play("idle")
 	
 	answer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	
@@ -191,9 +195,9 @@ func toggle_search_bubble():
 	
 func prompt_api_key_entry():
 	expand_window_for_bubble()
-	answer_label.text = "Google AI integration (Optional)\n Get apikey at aistudio.google.com\n (Stored locally on your PC and it's a Open Source project)"
+	answer_label.text ="Enter API Key:\n• Hack Club AI (ai.hackclub.com)\n• Google AI Studio (aistudio.google.com)"
 	line_edit.text = ""
-	line_edit.placeholder_text = "Paste Api key here ..."
+	line_edit.placeholder_text = "Paste sk-hc-... or Gemini key here...  "
 	
 func _on_close_button_pressed():
 	shrink_window_to_pet()
@@ -202,7 +206,7 @@ func _on_close_button_pressed():
 func _on_line_edit_text_submitted(new_text: String) -> void:
 	var clean_text = new_text.strip_edges()
 	
-	if clean_text.begins_with("AQ.") or clean_text.begins_with("AIza"):
+	if clean_text.begins_with("AQ.") or clean_text.begins_with("AIza") or clean_text.begins_with("sk-hc"):
 		save_api_key(clean_text)
 		answer_label.text = "Key saved! What would you like to ask?"
 		line_edit.text = ""
@@ -234,31 +238,52 @@ func ask_gemini(prompt_text: String) -> void:
 		return
 		
 	var clean_key = user_api_key.strip_edges().replace(" ", "").replace("\n", "").replace("\r", "").replace('"', '').replace("'", "")
-	var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + clean_key
-	var headers = ["Content-Type: application/json"]
 	
-	chat_history.append({
-		"role": "user",
-		"parts": [{"text": prompt_text}]
-	})
-	
-	
-	var body = {
-	"system_instruction": {
-			"parts": [{"text": "You are Neil, a friendly astronaut desktop pet. Answer concisely in 1-2 short sentences."}]
-		},
-		"contents": chat_history
-	}
-	
-	answer_label.text = "Neil is querying mission control..."
 	line_edit.clear()
+	answer_label.text = "Neil is querying mission control... "
 	
-	var err = http_request.request(url, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
-	if err != OK:
-		chat_history.pop_back()
-		print("HTTPRequest Error Code: ", err)
-		answer_label.text = "Failed to send HTTP request. Code: " + str(err)
-
+	var request_url: String = ""
+	var request_headers: PackedStringArray = []
+	var request_body: Dictionary = {}
+	
+	if clean_key.begins_with("sk-hc"):
+		request_url = "https://ai.hackclub.com/proxy/v1/chat/completions"
+		request_headers = [
+			"Content-Type: application/json ",
+			"Authorization: Bearer " + clean_key
+		]
+		request_body = {
+			"model": "qwen/qwen3-32b",
+			"messages": [
+				{"role": "system", "content": "You are Neil, a friendly astronaut desktop pet. Answer concisely in 1-2 short sentences."},
+				{"role": "user", "content": prompt_text}
+			]
+		}
+		var req_err = http_request.request(request_url, request_headers, HTTPClient.METHOD_POST, JSON.stringify(request_body))
+		if req_err != OK:
+			answer_label.text = "HTTPRequest Error Code: " + str(req_err)
+	else:
+		request_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + clean_key
+		request_headers = ["Content-Type: application/json"]
+	
+		chat_history.append({
+			"role": "user",
+			"parts": [{"text": prompt_text}]
+		})
+		
+		request_body = {
+			"system_instruction": {
+				"parts": [{"text": "You are Neil, a friendly astronaut desktop pet. Answer concisely in 1-2 short sentences."}]
+			},
+			"contents": chat_history
+		}
+		
+		var req_err = http_request.request(request_url, request_headers, HTTPClient.METHOD_POST, JSON.stringify(request_body))
+		if req_err != OK:
+			if not chat_history.is_empty():
+				chat_history.pop_back()
+			answer_label.text = "HTTPRequest Error Code: " + str(req_err)
+	
 func _on_files_dropped(files: PackedStringArray) -> void:
 	if files.is_empty():
 		return
@@ -296,30 +321,41 @@ func _on_files_dropped(files: PackedStringArray) -> void:
 		answer_label.text = "Failed to open file: " + file_name
 		
 		
-func _on_gemini_response(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	var response_str = body.get_string_from_utf8()
+func _on_gemini_response(_result: int, response_code: int, _headers: PackedStringArray, response_body: PackedByteArray) -> void:
+	var response_str = response_body.get_string_from_utf8()
 	
 	if response_code == 200:
 		var json = JSON.parse_string(response_str)
-		if json and json.has("candidates") and json["candidates"].size() > 0:
+		if json == null:
+			answer_label.text = "Failed to parse AI response."
+			return
+		
+		if json.has("choices") and json["choices"].size() > 0:
+			var reply = json["choices"][0]["message"]["content"]
+			answer_label.text = reply
+
+		
+		elif json.has("candidates") and json["candidates"].size() > 0:
 			var reply = json["candidates"][0]["content"]["parts"][0]["text"]
 			answer_label.text = reply
-			
 			chat_history.append({
 				"role": "model",
 				"parts": [{"text": reply}]
-				
 			})
-		
 		else:
-			chat_history.pop_back()
+			if not chat_history.is_empty():
+				chat_history.pop_back()
 			answer_label.text = "Neil couldn't process signal."
+
 	elif response_code == 503:
-		chat_history.pop_back()
+		if not chat_history.is_empty():
+			chat_history.pop_back()
 		answer_label.text = "Mission control is busy (503). Retrying in a moment..."
+
 	else:
-		chat_history.pop_back()
-		print("Google Server Response (Code ", response_code, "): ", response_str)
+		if not chat_history.is_empty():
+			chat_history.pop_back()
+		print("API Server Response (Code ", response_code, "): ", response_str)
 		answer_label.text = "Neil lost signal... HTTP Code: " + str(response_code)
 		
 		
@@ -443,6 +479,8 @@ func _input(event):
 			toggle_search_bubble()
 
 func _physics_process(delta: float) -> void:
+	if is_expanded:
+		return
 	if is_dragging: 
 		var current_mouse_pos = Vector2(DisplayServer.mouse_get_position())
 		if delta > 0:
